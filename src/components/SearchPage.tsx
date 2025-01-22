@@ -137,8 +137,8 @@ export const SearchPage = () => {
         </div>
       </div>
       {/* Results Section */}
-      <div className="flex gap-3">
-        <div className="space-y-4 w-[50%]">
+      <div className="flex flex-col md:flex-row gap-4">
+        <div className="w-full md:w-1/2 space-y-4">
           {isLoading ? (
             <div className="flex justify-center items-center h-32">
               <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
@@ -177,7 +177,19 @@ export const SearchPage = () => {
             ))
           )}
         </div>
-        <div className="flex-1 ">
+        <div className="w-full md:w-1/2">
+          <div className="flex gap-2 mb-3">
+            <Input
+              placeholder="Analyse scripture search results using AI"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-full"
+            />{" "}
+            <Button className="w-full sm:w-auto">
+              <Search className="mr-1 h-4 w-4" />
+              Search
+            </Button>
+          </div>
           <div className="flex flex-col gap-3 p-1 overflow-auto lg:max-h-[600px]">
             {analysisCategories.map((category) => (
               <Card
@@ -208,13 +220,7 @@ export const SearchPage = () => {
                 </CardFooter>
               </Card>
             ))}
-          </div>{" "}
-          <Input
-            placeholder="Analyse scripture search results using AI"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-full mt-3"
-          />
+          </div>
         </div>
       </div>
     </div>
