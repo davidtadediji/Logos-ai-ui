@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { searchBible } from "@/api";
+import { searchBible } from "@/service";
 
 // SearchResult type definition
 type SearchResult = {
@@ -138,7 +138,7 @@ export const SearchPage = () => {
       </div>
       {/* Results Section */}
       <div className="flex flex-col md:flex-row gap-4">
-        <div className="w-full md:w-1/2 space-y-4">
+        <div className="w-full md:w-1/2 space-y-4 lg:max-h-[650px] overflow-auto">
           {isLoading ? (
             <div className="flex justify-center items-center h-32">
               <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
