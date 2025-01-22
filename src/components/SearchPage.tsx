@@ -26,7 +26,7 @@ type SearchResult = {
 };
 
 export const SearchPage = () => {
-  const [query, setQuery] = useState("God's creation of the world");
+  const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [searchType, setSearchType] = useState<"verse" | "chapter">("verse");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -44,32 +44,16 @@ export const SearchPage = () => {
       setIsLoading(false);
     }
   };
-  //   const handleSearch = async () => {
-  //     // TODO: Replace with actual API call
-  //     const dummyResults = [
-  //       {
-  //         id: "Genesis 1:1",
-  //         text: "In the beginning God created the heavens and the earth.",
-  //         distance: 0.1,
-  //       },
-  //       {
-  //         id: "John 1:1",
-  //         text: "In the beginning was the Word, and the Word was with God, and the Word was God.",
-  //         distance: 0.2,
-  //       },
-  //     ];
-  //     setResults(dummyResults);
-  //   };
 
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Search Section */}
       <div className="mb-8 space-y-4">
-        <h1 className="text-3xl font-bold">Bible Search</h1>
-        <div className="flex gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold">Bible Semantic Search</h1>
+        <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
             <Input
-              placeholder="Enter your search query..."
+              placeholder="Explore scripture by topic or keyword..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="w-full"
@@ -81,7 +65,7 @@ export const SearchPage = () => {
               setSearchType(value as "verse" | "chapter")
             }
           >
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-full md:w-32">
               <SelectValue placeholder="Search by" />
             </SelectTrigger>
             <SelectContent>
@@ -89,7 +73,7 @@ export const SearchPage = () => {
               <SelectItem value="chapter">Chapter</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={handleSearch}>
+          <Button onClick={handleSearch} className="w-full md:w-auto">
             <Search className="mr-2 h-4 w-4" />
             Search
           </Button>
