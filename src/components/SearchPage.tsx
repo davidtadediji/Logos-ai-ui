@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { searchBible } from "@/service";
+import { analyseScripture, searchBible } from "@/service";
 
 // SearchResult type definition
 type SearchResult = {
@@ -30,29 +30,73 @@ type AnalysisType =
   | "socio-rhetorical"
   | "thematic"
   | "ethical"
-  | "genre"
-  | "interactive";
+  | "genre";
 
-type AnalysisResult = {
+type AnalysisCard = {
   type: AnalysisType;
+  title: string;
+  icon: string;
   content: string;
-  passage: string;
 };
 
 export const SearchPage = () => {
-  const [query, setQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [chatQuery, setChatQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingCards, setLoadingCards] = useState<Set<string>>(new Set());
   const [searchType, setSearchType] = useState<"verse" | "chapter">("verse");
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [qaResults, setQAResults] = useState<string[]>([]);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
-  const [analysisResults, setAnalysisResults] = useState<AnalysisResult[]>([]);
+  const [analysisCards, setAnalysisCards] = useState<AnalysisCard[]>([
+    {
+      type: "exegetical",
+      title: "Exegetical Analysis",
+      icon: "📜",
+      content: "Click generate to view analysis",
+    },
+    {
+      type: "socio-rhetorical",
+      title: "Socio-Rhetorical",
+      icon: "🏛️",
+      content: "Click generate to view analysis",
+    },
+    {
+      type: "thematic",
+      title: "Thematic Trace",
+      icon: "🔍",
+      content: "Click generate to view analysis",
+    },
+    {
+      type: "ethical",
+      title: "Ethical Framework",
+      icon: "⚖️",
+      content: "Click generate to view analysis",
+    },
+    {
+      type: "genre",
+      title: "Genre Analysis",
+      icon: "📚",
+      content: "Click generate to view analysis",
+    },
+  ]);
 
   const handleSearch = async () => {
-    if (query) {
+    if (searchQuery) {
       try {
         setIsLoading(true);
-        const results = await searchBible(query, searchType);
+        const results = await searchBible(searchQuery, searchType);
         setResults(results);
+
+        const qaResponse = await analyseScripture(
+          results.map(
+            (result: { id: string; text: string }) =>
+              `${result.id}: ${result.text}`
+          ),
+          "interactive_qa"
+        );
+
+        setQAResults(qaResponse.result);
       } catch (error) {
         console.error("Error searching the Bible:", error);
         setResults([]); // Clear results in case of error
@@ -62,57 +106,53 @@ export const SearchPage = () => {
     }
   };
 
-  const analysisCategories = [
-    {
-      type: "exegetical",
-      title: "Exegetical Analysis",
-      icon: "📜",
-    },
-    {
-      type: "socio-rhetorical",
-      title: "Socio-Rhetorical",
-      icon: "🏛️",
-    },
-    {
-      type: "thematic",
-      title: "Thematic Trace",
-      icon: "🔍",
-    },
-    {
-      type: "ethical",
-      title: "Ethical Framework",
-      icon: "⚖️",
-    },
-    {
-      type: "genre",
-      title: "Genre Analysis",
-      icon: "📚",
-    },
-    {
-      type: "interactive",
-      title: "Interactive Q&A",
-      icon: "💡",
-    },
-  ];
+  const generateAnalysisContent = async (type: string) => {
+    if (results.length > 0) {
+      try {
+        setLoadingCards((prev) => new Set(prev).add(type));
+        const analysis = await analyseScripture(
+          results.map((result) => `${result.id}: ${result.text}`),
+          type
+        );
 
-  const getAnalysisContent = (type: AnalysisType) => {
-    const result = analysisResults.find((r) => r.type === type);
-    return result?.content || "Click generate to view analysis";
+        setAnalysisCards((prevCards) =>
+          prevCards.map((card) =>
+            card.type === type ? { ...card, content: analysis.result } : card
+          )
+        );
+      } catch (error) {
+        console.error("Error analyzing scripture:", error);
+        setAnalysisCards((prevCards) =>
+          prevCards.map((card) =>
+            card.type === type
+              ? {
+                  ...card,
+                  content: "Failed to analyze scripture. Please try again.",
+                }
+              : card
+          )
+        );
+      } finally {
+        setLoadingCards((prev) => {
+          const next = new Set(prev);
+          next.delete(type);
+          return next;
+        });
+      }
+    }
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Search Section */}
       <div className="mb-8 space-y-4">
-        <h1 className="text-2xl md:text-3xl font-bold">
-          Scripture Semantic Search
-        </h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Scripture Analyser</h1>
         <div className="flex flex-col md:flex-row gap-4 w-full lg:w-[80%] m-auto">
           <div className="flex-1">
             <Input
               placeholder="Explore scripture by topic or keyword..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full"
             />
           </div>
@@ -136,9 +176,10 @@ export const SearchPage = () => {
           </Button>
         </div>
       </div>
+
       {/* Results Section */}
       <div className="flex flex-col md:flex-row gap-4">
-        <div className="w-full md:w-1/2 space-y-4 lg:max-h-[650px] overflow-auto">
+        <div className="w-full md:w-1/2 space-y-4 lg:h-[650px] overflow-auto">
           {isLoading ? (
             <div className="flex justify-center items-center h-32">
               <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
@@ -154,24 +195,26 @@ export const SearchPage = () => {
                 </CardHeader>
                 <CardContent>
                   <p
-                    className={`text-gray-700 ${
-                      expandedCard === result.id ? "" : "line-clamp-3"
+                    className={`text-sm text-gray-600 line-clamp-3 ${
+                      expandedCard === result.id ? "!line-clamp-none" : ""
                     }`}
                   >
                     {result.text}
                   </p>
                 </CardContent>
                 <CardFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      setExpandedCard(
-                        expandedCard === result.id ? null : result.id
-                      )
-                    }
-                  >
-                    {expandedCard === result.id ? "Show Less" : "Show More"}
-                  </Button>
+                  {result.text.length > 150 && (
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        setExpandedCard(
+                          expandedCard === result.id ? null : result.id
+                        )
+                      }
+                    >
+                      {expandedCard === result.id ? "Show Less" : "Show More"}
+                    </Button>
+                  )}
                 </CardFooter>
               </Card>
             ))
@@ -181,39 +224,77 @@ export const SearchPage = () => {
           <div className="flex gap-2 mb-3">
             <Input
               placeholder="Analyse scripture search results using AI"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
               className="w-full"
+              value={chatQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />{" "}
             <Button className="w-full sm:w-auto">
               <Search className="mr-1 h-4 w-4" />
               Search
             </Button>
           </div>
-          <div className="flex flex-col gap-3 p-1 overflow-auto lg:max-h-[600px]">
-            {analysisCategories.map((category) => (
+          {/* Update the QA Results section */}
+          {qaResults?.length > 0 && (
+            <div className="mb-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                Suggested Questions
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {qaResults.map((qa, index) => (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    className="
+                      text-left
+                      bg-white
+                      hover:bg-gray-50
+                      border border-gray-200
+                      rounded-lg
+                      px-4 py-2
+                      text-sm
+                      text-gray-700
+                      hover:text-gray-900
+                      transition-colors
+                      flex items-center gap-2
+                      max-w-full
+                    "
+                    onClick={() => {
+                      setChatQuery(qa);
+                    }}
+                  >
+                    <Search className="h-4 w-4 flex-shrink-0" />
+                    <span className="line-clamp-2">{qa}</span>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="flex flex-col gap-3 p-1 overflow-auto lg:h-[400px]">
+            {analysisCards.map((card) => (
               <Card
-                key={category.type}
-                className="hover:shadow-lg transition-shadow min-h-[200px]"
+                key={card.type}
+                className="hover:shadow-lg transition-shadow"
               >
                 <CardHeader className="pb-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-2xl">{category.icon}</span>
-                    <CardTitle className="text-lg">{category.title}</CardTitle>
+                    <span className="text-2xl">{card.icon}</span>
+                    <CardTitle className="text-lg">{card.title}</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="text-sm text-gray-600">
-                    {getAnalysisContent(category.type as AnalysisType)}
+                    {loadingCards.has(card.type) ? (
+                      <Loader2 className="h-6 w-6 animate-spin m-auto" />
+                    ) : (
+                      <pre className="whitespace-pre-wrap">{card.content}</pre>
+                    )}
                   </div>
                 </CardContent>
                 <CardFooter className="justify-end">
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      /* Add analysis generation logic here */
-                    }}
+                    onClick={() => generateAnalysisContent(card.type)}
                   >
                     Generate
                   </Button>

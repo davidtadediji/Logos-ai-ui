@@ -25,3 +25,31 @@ export async function searchBible(query: string, type: "verse" | "chapter") {
 
   return response.json();
 }
+
+
+/**
+ * Analyze biblical texts using the specified analysis type.
+ *
+ * @param texts - A list of biblical texts to analyze.
+ * @param type - The type of analysis to perform (e.g., "comprehensive_exegetical_analysis").
+ * @returns The analysis result from the server.
+ * @throws Error if the HTTP request fails.
+ */
+export async function analyseScripture(texts: string[], type: string) {
+  const response = await fetch(`${serverApi}/api/logos/analyze`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      texts: texts,
+      type: type,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
+}
