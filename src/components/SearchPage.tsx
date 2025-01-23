@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { analyseScripture, searchBible } from "@/service";
+import ReactMarkdown from 'react-markdown';
 
 // SearchResult type definition
 type SearchResult = {
@@ -319,9 +320,9 @@ export const SearchPage = () => {
                         </span>
                       </div>
                     )}
-                    <pre className="whitespace-pre-wrap text-sm text-gray-600">
-                      {message.content}
-                    </pre>
+                    <div className="prose prose-sm max-w-none text-gray-600">
+                      <ReactMarkdown>{message.content}</ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               ))}
