@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Loader2, Search } from "lucide-react";
 import {
   Card,
@@ -39,13 +39,21 @@ type AnalysisCard = {
   content: string;
 };
 
+// Update the message type to be more specific
+type Message = {
+  role: "system" | "user";
+  type?: AnalysisType;
+  content: string;
+};
+
 export const SearchPage = () => {
-  const [query, setQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("The word is God");
+  const [chatQuery, setChatQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loadingCards, setLoadingCards] = useState<Set<string>>(new Set());
   const [searchType, setSearchType] = useState<"verse" | "chapter">("verse");
   const [results, setResults] = useState<SearchResult[]>([]);
-  const [qaResults, setQAResults] = useState<[]>([]);
+  const [qaResults, setQAResults] = useState<string[]>([]);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [analysisCards, setAnalysisCards] = useState<AnalysisCard[]>([
     {
@@ -79,12 +87,41 @@ export const SearchPage = () => {
       content: "Click generate to view analysis",
     },
   ]);
+  const [messages, setMessages] = useState<Message[]>([]);
+
+  // Update ref to point to the message container itself
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  // Update scroll function to position new message near the top
+  const scrollToNewMessage = () => {
+    if (messagesContainerRef.current) {
+      const container = messagesContainerRef.current;
+      const lastMessage = container.lastElementChild;
+
+      if (lastMessage) {
+        const containerHeight = container.clientHeight;
+        const messageTop = lastMessage.getBoundingClientRect().top;
+        const containerTop = container.getBoundingClientRect().top;
+        const relativeTop = messageTop - containerTop;
+
+        container.scrollBy({
+          top: relativeTop - 20, // 20px from the top
+          behavior: "smooth",
+        });
+      }
+    }
+  };
+
+  // Update useEffect to use new scroll function
+  useEffect(() => {
+    scrollToNewMessage();
+  }, [messages]);
 
   const handleSearch = async () => {
-    if (query) {
+    if (searchQuery) {
       try {
         setIsLoading(true);
-        const results = await searchBible(query, searchType);
+        const results = await searchBible(searchQuery, searchType);
         setResults(results);
 
         const qaResponse = await analyseScripture(
@@ -95,7 +132,7 @@ export const SearchPage = () => {
           "interactive_qa"
         );
 
-        setQAResults(qaResponse.results);
+        setQAResults(qaResponse.result);
       } catch (error) {
         console.error("Error searching the Bible:", error);
         setResults([]); // Clear results in case of error
@@ -105,7 +142,7 @@ export const SearchPage = () => {
     }
   };
 
-  const generateAnalysisContent = async (type: string) => {
+  const generateAnalysisContent = async (type: AnalysisType) => {
     if (results.length > 0) {
       try {
         setLoadingCards((prev) => new Set(prev).add(type));
@@ -114,23 +151,25 @@ export const SearchPage = () => {
           type
         );
 
-        setAnalysisCards((prevCards) =>
-          prevCards.map((card) =>
-            card.type === type ? { ...card, content: analysis.result } : card
-          )
-        );
+        // Add the analysis result as a system message
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "system",
+            type: type,
+            content: analysis.result,
+          },
+        ]);
       } catch (error) {
         console.error("Error analyzing scripture:", error);
-        setAnalysisCards((prevCards) =>
-          prevCards.map((card) =>
-            card.type === type
-              ? {
-                  ...card,
-                  content: "Failed to analyze scripture. Please try again.",
-                }
-              : card
-          )
-        );
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "system",
+            type: type,
+            content: "Failed to analyze scripture. Please try again.",
+          },
+        ]);
       } finally {
         setLoadingCards((prev) => {
           const next = new Set(prev);
@@ -145,15 +184,15 @@ export const SearchPage = () => {
     <div className="container mx-auto px-4 py-8">
       {/* Search Section */}
       <div className="mb-8 space-y-4">
-        <h1 className="text-2xl md:text-3xl font-bold">
-          Scripture Semantic Search
+        <h1 className="text-2xl md:text-3xl font-bold text-center">
+          {import.meta.env.VITE_APP_ROLE}
         </h1>
         <div className="flex flex-col md:flex-row gap-4 w-full lg:w-[80%] m-auto">
           <div className="flex-1">
             <Input
               placeholder="Explore scripture by topic or keyword..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full"
             />
           </div>
@@ -177,16 +216,17 @@ export const SearchPage = () => {
           </Button>
         </div>
       </div>
+
       {/* Results Section */}
       <div className="flex flex-col md:flex-row gap-4">
-        <div className="w-full md:w-1/2 space-y-4 lg:max-h-[650px] overflow-auto">
+        <div className="w-full md:w-1/2 space-y-4 lg:h-[650px] overflow-auto">
           {isLoading ? (
             <div className="flex justify-center items-center h-32">
               <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
               <span className="ml-2 text-gray-500">Searching...</span>
             </div>
           ) : !results.length ? (
-            <p className="text-gray-400 p-10">No search results</p>
+            <p className="text-gray-400 p-10 text-center">No search results</p>
           ) : (
             results.map((result) => (
               <Card key={result.id} className="w-full">
@@ -221,49 +261,108 @@ export const SearchPage = () => {
           )}
         </div>
         <div className="w-full md:w-1/2">
-          <div className="flex gap-2 mb-3">
-            <Input
-              placeholder="Analyse scripture search results using AI"
-              onChange={(e) => setQuery(e.target.value)}
-              className="w-full"
-            />{" "}
-            <Button className="w-full sm:w-auto">
-              <Search className="mr-1 h-4 w-4" />
-              Search
-            </Button>
-          </div>
-          <div className="flex flex-col gap-3 p-1 overflow-auto lg:max-h-[600px]">
-            {analysisCards.map((card) => (
-              <Card
-                key={card.type}
-                className="hover:shadow-lg transition-shadow"
-              >
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">{card.icon}</span>
-                    <CardTitle className="text-lg">{card.title}</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-sm text-gray-600">
-                    {loadingCards.has(card.type) ? (
-                      <Loader2 className="h-6 w-6 animate-spin m-auto" />
-                    ) : (
-                      <pre className="whitespace-pre-wrap">{card.content}</pre>
-                    )}
-                  </div>
-                </CardContent>
-                <CardFooter className="justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => generateAnalysisContent(card.type)}
+          <div className="flex flex-col h-[650px]">
+            {/* Analysis Type Buttons */}
+            <div className="flex flex-wrap gap-2 mb-3">
+              {analysisCards.map((card) => (
+                <Button
+                  key={card.type}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => generateAnalysisContent(card.type)}
+                  className="flex items-center gap-2"
+                >
+                  <span>{card.icon}</span>
+                  {loadingCards.has(card.type) ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    card.title
+                  )}
+                </Button>
+              ))}
+            </div>
+
+            {/* Chat Messages Area */}
+            <div
+              ref={messagesContainerRef}
+              className="flex-1 overflow-auto mb-3 space-y-4 p-4 border rounded-lg"
+            >
+              {messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`flex ${
+                    message.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  <div
+                    className={`max-w-[80%] p-4 rounded-lg shadow border ${
+                      message.role === "user"
+                        ? "bg-blue-50 ml-auto"
+                        : "bg-white mr-auto"
+                    }`}
                   >
-                    Generate
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+                    {message.role === "system" && message.type && (
+                      <div className="flex items-center gap-2 mb-2">
+                        <span>
+                          {
+                            analysisCards.find(
+                              (card) => card.type === message.type
+                            )?.icon
+                          }
+                        </span>
+                        <span className="font-semibold">
+                          {
+                            analysisCards.find(
+                              (card) => card.type === message.type
+                            )?.title
+                          }
+                        </span>
+                      </div>
+                    )}
+                    <pre className="whitespace-pre-wrap text-sm text-gray-600">
+                      {message.content}
+                    </pre>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Input and QA Section */}
+            <div className="mt-auto">
+              <div className="flex gap-2 mb-3">
+                <Input
+                  placeholder="Analyse scripture search results using AI"
+                  className="w-full"
+                  value={chatQuery}
+                  onChange={(e) => setChatQuery(e.target.value)}
+                />
+                <Button className="w-full sm:w-auto">
+                  <Search className="mr-1 h-4 w-4" />
+                  Search
+                </Button>
+              </div>
+
+              {qaResults?.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                    Suggested Questions
+                  </h3>
+                  <div className="flex flex-wrap gap-2 h-64 overflow-y-auto p-2">
+                    {qaResults.map((qa, index) => (
+                      <Button
+                        key={index}
+                        variant="outline"
+                        className="text-left bg-white hover:bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-[13px] text-gray-700 hover:text-gray-900 transition-colors flex items-center gap-2 max-w-full"
+                        onClick={() => setChatQuery(qa)}
+                      >
+                        <Search className="h-4 w-4 flex-shrink-0" />
+                        <span className="line-clamp-2">{qa}</span>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

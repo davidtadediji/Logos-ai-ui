@@ -15,9 +15,11 @@ export default function App() {
       {/* Navigation */}
       <nav className="bg-white shadow-sm">
         <div className="container mx-auto px-4">
-          <div className="flex h-16 items-center justify-between">
+          <div className="flex p-2 items-center justify-between">
             {/* Logo */}
-            <div className="text-xl font-bold">LogosAI</div>
+            <div className="text-xl font-bold">
+              {import.meta.env.VITE_APP_NAME}
+            </div>
 
             {/* Desktop Navigation Buttons */}
             <div className="hidden md:flex space-x-4">
@@ -57,7 +59,11 @@ export default function App() {
                 size="icon"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               >
-                {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                {isMobileMenuOpen ? (
+                  <X className="h-6 w-6" />
+                ) : (
+                  <Menu className="h-6 w-6" />
+                )}
               </Button>
             </div>
           </div>
