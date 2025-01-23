@@ -40,13 +40,12 @@ type AnalysisCard = {
 };
 
 export const SearchPage = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [chatQuery, setChatQuery] = useState("");
+  const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loadingCards, setLoadingCards] = useState<Set<string>>(new Set());
   const [searchType, setSearchType] = useState<"verse" | "chapter">("verse");
   const [results, setResults] = useState<SearchResult[]>([]);
-  const [qaResults, setQAResults] = useState<string[]>([]);
+  const [qaResults, setQAResults] = useState<[]>([]);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [analysisCards, setAnalysisCards] = useState<AnalysisCard[]>([
     {
@@ -82,10 +81,10 @@ export const SearchPage = () => {
   ]);
 
   const handleSearch = async () => {
-    if (searchQuery) {
+    if (query) {
       try {
         setIsLoading(true);
-        const results = await searchBible(searchQuery, searchType);
+        const results = await searchBible(query, searchType);
         setResults(results);
 
         const qaResponse = await analyseScripture(
@@ -96,7 +95,7 @@ export const SearchPage = () => {
           "interactive_qa"
         );
 
-        setQAResults(qaResponse.result);
+        setQAResults(qaResponse.results);
       } catch (error) {
         console.error("Error searching the Bible:", error);
         setResults([]); // Clear results in case of error
@@ -146,13 +145,15 @@ export const SearchPage = () => {
     <div className="container mx-auto px-4 py-8">
       {/* Search Section */}
       <div className="mb-8 space-y-4">
-        <h1 className="text-2xl md:text-3xl font-bold">Scripture Analyser</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">
+          Scripture Semantic Search
+        </h1>
         <div className="flex flex-col md:flex-row gap-4 w-full lg:w-[80%] m-auto">
           <div className="flex-1">
             <Input
               placeholder="Explore scripture by topic or keyword..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
               className="w-full"
             />
           </div>
@@ -176,10 +177,9 @@ export const SearchPage = () => {
           </Button>
         </div>
       </div>
-
       {/* Results Section */}
       <div className="flex flex-col md:flex-row gap-4">
-        <div className="w-full md:w-1/2 space-y-4 lg:h-[650px] overflow-auto">
+        <div className="w-full md:w-1/2 space-y-4 lg:max-h-[650px] overflow-auto">
           {isLoading ? (
             <div className="flex justify-center items-center h-32">
               <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
@@ -224,52 +224,15 @@ export const SearchPage = () => {
           <div className="flex gap-2 mb-3">
             <Input
               placeholder="Analyse scripture search results using AI"
+              onChange={(e) => setQuery(e.target.value)}
               className="w-full"
-              value={chatQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
             />{" "}
             <Button className="w-full sm:w-auto">
               <Search className="mr-1 h-4 w-4" />
               Search
             </Button>
           </div>
-          {/* Update the QA Results section */}
-          {qaResults?.length > 0 && (
-            <div className="mb-4">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                Suggested Questions
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {qaResults.map((qa, index) => (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    className="
-                      text-left
-                      bg-white
-                      hover:bg-gray-50
-                      border border-gray-200
-                      rounded-lg
-                      px-4 py-2
-                      text-sm
-                      text-gray-700
-                      hover:text-gray-900
-                      transition-colors
-                      flex items-center gap-2
-                      max-w-full
-                    "
-                    onClick={() => {
-                      setChatQuery(qa);
-                    }}
-                  >
-                    <Search className="h-4 w-4 flex-shrink-0" />
-                    <span className="line-clamp-2">{qa}</span>
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
-          <div className="flex flex-col gap-3 p-1 overflow-auto lg:h-[400px]">
+          <div className="flex flex-col gap-3 p-1 overflow-auto lg:max-h-[600px]">
             {analysisCards.map((card) => (
               <Card
                 key={card.type}
