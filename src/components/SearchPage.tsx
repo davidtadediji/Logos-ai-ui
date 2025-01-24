@@ -48,7 +48,7 @@ type Message = {
 };
 
 export const SearchPage = () => {
-  const [searchQuery, setSearchQuery] = useState("The word is God");
+  const [searchQuery, setSearchQuery] = useState("");
   const [chatQuery, setChatQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loadingCards, setLoadingCards] = useState<Set<string>>(new Set());
@@ -56,7 +56,7 @@ export const SearchPage = () => {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [qaResults, setQAResults] = useState<string[]>([]);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
-  const [analysisCards, setAnalysisCards] = useState<AnalysisCard[]>([
+  const analysisCards :AnalysisCard[] = [
     {
       type: "exegetical",
       title: "Exegetical Analysis",
@@ -87,7 +87,7 @@ export const SearchPage = () => {
       icon: "📚",
       content: "Click generate to view analysis",
     },
-  ]);
+  ];
   const [messages, setMessages] = useState<Message[]>([]);
 
   // Update ref to point to the message container itself
@@ -100,7 +100,6 @@ export const SearchPage = () => {
       const lastMessage = container.lastElementChild;
 
       if (lastMessage) {
-        const containerHeight = container.clientHeight;
         const messageTop = lastMessage.getBoundingClientRect().top;
         const containerTop = container.getBoundingClientRect().top;
         const relativeTop = messageTop - containerTop;
@@ -182,7 +181,7 @@ export const SearchPage = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-3">
       {/* Search Section */}
       <div className="mb-8 space-y-4">
         <h1 className="text-2xl md:text-3xl font-bold text-center">
@@ -348,7 +347,7 @@ export const SearchPage = () => {
                   <h3 className="text-sm font-semibold text-gray-700 mb-2">
                     Suggested Questions
                   </h3>
-                  <div className="flex flex-wrap gap-2 h-64 overflow-y-auto p-2">
+                  <div className="flex flex-wrap gap-2 h-48 overflow-y-auto p-2">
                     {qaResults.map((qa, index) => (
                       <Button
                         key={index}
