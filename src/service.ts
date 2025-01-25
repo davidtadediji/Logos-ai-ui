@@ -54,12 +54,35 @@ export async function analyseScripture(texts: string[], type: string) {
   return response.json();
 }
 
+/**
+ * Create an anonymous session for the user.
+ *
+ * @returns The session ID from the server.
+ * @throws Error if the HTTP request fails.
+ */
+export async function createAnonymousSession() {
+  const response = await fetch(`${serverApi}/api/logos/create-anonymous-session`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include", // Ensure cookies are included in the request
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
+}
+
 export async function chat(context: string, query: string, user_id?: string) {
   const response = await fetch(`${serverApi}/api/logos/chat`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include", // Include cookies in the request
     body: JSON.stringify({
       context: context,
       query: query,

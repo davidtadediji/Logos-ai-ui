@@ -1,14 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { SearchPage } from "./components/SearchPage";
 import { ApiDocsPage } from "./components/ApiDocsPage";
 import { AboutPage } from "./components/About";
 import { Menu, X } from "lucide-react"; // Import icons for the mobile menu
+import { createAnonymousSession } from "@/service"; // Import the API service
 import "./App.css";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState("search");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // State for mobile menu
+
+  // Check for an existing session or create a new one on app load
+  useEffect(() => {
+    const initializeSession = async () => {
+      try {
+        // Check if a session already exists (e.g., by checking a cookie)
+        const sessionExists = document.cookie.includes("cookie"); // Replace "cookie" with your cookie name
+        if (!sessionExists) {
+          // If no session exists, create a new one
+          await createAnonymousSession();
+          console.log("New anonymous session created.");
+        } else {
+          console.log("Existing session found.");
+        }
+      } catch (error) {
+        console.error("Failed to initialize session:", error);
+      }
+    };
+
+    initializeSession();
+  }, []); // Run only once on component mount
 
   return (
     <div className="min-h-screen bg-gray-50">
