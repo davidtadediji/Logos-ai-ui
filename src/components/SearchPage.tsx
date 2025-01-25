@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { analyseScripture, searchBible, correctText } from "@/service";
+import { analyseScripture, searchBible, correctText, chat } from "@/service";
 import ReactMarkdown from "react-markdown";
 
 // SearchResult type definition
@@ -51,6 +51,7 @@ export const SearchPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [chatQuery, setChatQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [loadingCards, setLoadingCards] = useState<Set<string>>(new Set());
   const [searchType, setSearchType] = useState<"verse" | "chapter">("verse");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -138,6 +139,37 @@ export const SearchPage = () => {
         setResults([]); // Clear results in case of error
       } finally {
         setIsLoading(false);
+      }
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (chatQuery) {
+      try {
+        setIsSending(true);
+        // Append user message
+        setMessages((prevMessages) => prevMessages.concat({
+          role: "user",
+          content: chatQuery,
+        }));
+        
+        const chatResponse = await chat(
+          results.map((result) => result.text).join("\n\n"),
+          chatQuery
+        );
+
+        // Append system message
+        setMessages((prevMessages) => prevMessages.concat({
+          role: "system",
+          content: chatResponse.response,
+        }));
+        
+        setChatQuery(""); // Clear chat query after sending
+      } catch (error) {
+        console.error("Error sending message to scripture expert:", error);
+        setResults([]); // Clear results in case of error
+      } finally {
+        setIsSending(false);
       }
     }
   };
@@ -378,8 +410,15 @@ export const SearchPage = () => {
                   </span>
                 </div>
 
-                <Button className="w-full sm:w-auto">
-                  <ArrowUp className="mr-1 h-4 w-4" />
+                <Button
+                  className="w-full sm:w-auto"
+                  onClick={handleSendMessage}
+                >
+                  {isSending ? (
+                    <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+                  ) : (
+                    <ArrowUp className="mr-1 h-4 w-4" />
+                  )}
                   Send
                 </Button>
               </div>
