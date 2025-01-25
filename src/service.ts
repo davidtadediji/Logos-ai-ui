@@ -54,6 +54,26 @@ export async function analyseScripture(texts: string[], type: string) {
   return response.json();
 }
 
+export async function chat(context: string, query: string, user_id?: string) {
+  const response = await fetch(`${serverApi}/api/logos/chat`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      context: context,
+      query: query,
+      user_id: user_id,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
+}
+
 export async function correctText(query: string) {
   const response = await fetch(`${serverApi}/api/logos/correct`, {
     method: "POST",

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Loader2, Search, Wand2 } from "lucide-react";
+import { Loader2, Search, Wand2, ArrowUp } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -365,7 +365,7 @@ export const SearchPage = () => {
               <div className="flex gap-2 mb-3">
                 <div className="flex-1 relative flex items-center">
                   <Input
-                    placeholder="Analyse scripture search results using AI"
+                    placeholder="Probe scripture search results using AI"
                     value={chatQuery}
                     onChange={(e) => setChatQuery(e.target.value)}
                     className="w-full pr-10 focus:ring-2 focus:ring-blue-500 transition-all duration-300"
@@ -379,7 +379,7 @@ export const SearchPage = () => {
                 </div>
 
                 <Button className="w-full sm:w-auto">
-                  <Search className="mr-1 h-4 w-4" />
+                  <ArrowUp className="mr-1 h-4 w-4" />
                   Send
                 </Button>
               </div>
