@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search, Wand2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -16,8 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { analyseScripture, searchBible } from "@/service";
-import ReactMarkdown from 'react-markdown';
+import { analyseScripture, searchBible, correctText } from "@/service";
+import ReactMarkdown from "react-markdown";
 
 // SearchResult type definition
 type SearchResult = {
@@ -56,7 +56,7 @@ export const SearchPage = () => {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [qaResults, setQAResults] = useState<string[]>([]);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
-  const analysisCards :AnalysisCard[] = [
+  const analysisCards: AnalysisCard[] = [
     {
       type: "exegetical",
       title: "Exegetical Analysis",
@@ -180,6 +180,33 @@ export const SearchPage = () => {
     }
   };
 
+  const handleAutocorrect = async (type: string) => {
+    if (type == "search") {
+      if (searchQuery) {
+        try {
+          const correctionResponse = await correctText(searchQuery);
+          if (correctionResponse.corrected_text) {
+            setSearchQuery(correctionResponse.corrected_text);
+          }
+        } catch (error) {
+          console.error("Error correcting text:", error);
+        }
+      }
+    }
+    if (type == "chat") {
+      if (chatQuery) {
+        try {
+          const correctionResponse = await correctText(chatQuery);
+          if (correctionResponse.corrected_text) {
+            setChatQuery(correctionResponse.corrected_text);
+          }
+        } catch (error) {
+          console.error("Error correcting text:", error);
+        }
+      }
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-3">
       {/* Search Section */}
@@ -188,13 +215,19 @@ export const SearchPage = () => {
           {import.meta.env.VITE_APP_ROLE}
         </h1>
         <div className="flex flex-col md:flex-row gap-4 w-full lg:w-[80%] m-auto">
-          <div className="flex-1">
+          <div className="flex-1 relative flex items-center">
             <Input
               placeholder="Explore scripture by topic or keyword..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full"
+              className="w-full pr-10 focus:ring-2 focus:ring-blue-500 transition-all duration-300"
             />
+            <span
+              onClick={() => handleAutocorrect("search")}
+              className="absolute p-1 right-1 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600 hover:bg-transparent bg-transparent"
+            >
+              <Wand2 className="h-5 w-5" />
+            </span>
           </div>
           <Select
             value={searchType}
@@ -330,15 +363,24 @@ export const SearchPage = () => {
             {/* Input and QA Section */}
             <div className="mt-auto">
               <div className="flex gap-2 mb-3">
-                <Input
-                  placeholder="Analyse scripture search results using AI"
-                  className="w-full"
-                  value={chatQuery}
-                  onChange={(e) => setChatQuery(e.target.value)}
-                />
+                <div className="flex-1 relative flex items-center">
+                  <Input
+                    placeholder="Analyse scripture search results using AI"
+                    value={chatQuery}
+                    onChange={(e) => setChatQuery(e.target.value)}
+                    className="w-full pr-10 focus:ring-2 focus:ring-blue-500 transition-all duration-300"
+                  />
+                  <span
+                    onClick={() => handleAutocorrect("chat")}
+                    className="absolute p-1 right-1 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600 hover:bg-transparent bg-transparent"
+                  >
+                    <Wand2 className="h-5 w-5" />
+                  </span>
+                </div>
+
                 <Button className="w-full sm:w-auto">
                   <Search className="mr-1 h-4 w-4" />
-                  Search
+                  Send
                 </Button>
               </div>
 

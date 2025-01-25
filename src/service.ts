@@ -53,3 +53,19 @@ export async function analyseScripture(texts: string[], type: string) {
 
   return response.json();
 }
+
+export async function correctText(query: string) {
+  const response = await fetch(`${serverApi}/api/logos/correct`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ text: query }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
+}
