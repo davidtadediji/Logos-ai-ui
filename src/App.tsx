@@ -18,11 +18,25 @@ export default function App() {
 
     const initializeSession = async () => {
       try {
-        // Always attempt to create/reuse a session
+        // Check if a valid token already exists in localStorage
+        const existingToken = localStorage.getItem("access_token");
+
+        if (existingToken) {
+          // Validate the existing token (e.g., check expiration)
+          const isTokenValid = validateToken(existingToken); // Implement this function
+          if (isTokenValid) {
+            console.log("Reusing existing session");
+            return; // Reuse the existing token
+          } else {
+            console.log("Existing token is invalid, creating a new session");
+            localStorage.removeItem("access_token"); // Clear the invalid token
+          }
+        }
+
+        // If no valid token exists, create a new session
         const { access_token } = await createAnonymousSession();
-        // Store the token in localStorage or sessionStorage
         localStorage.setItem("access_token", access_token);
-        console.log("Session initialized and token stored");
+        console.log("New session initialized and token stored");
       } catch (error) {
         console.error("Session initialization failed:", error);
       }
@@ -30,6 +44,20 @@ export default function App() {
 
     initializeSession();
   }, []);
+
+  const validateToken = (token: string) => {
+    try {
+      // Decode the token (without verifying the signature)
+      const payload = JSON.parse(atob(token.split(".")[1]));
+
+      // Check if the token is expired
+      const isExpired = payload.exp * 1000 < Date.now(); // Convert exp to milliseconds
+      return !isExpired; // Return true if the token is valid
+    } catch (error) {
+      console.error("Token validation failed:", error);
+      return false; // Invalid token
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">

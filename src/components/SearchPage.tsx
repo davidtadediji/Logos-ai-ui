@@ -122,17 +122,27 @@ export const SearchPage = () => {
     if (searchQuery) {
       try {
         setIsLoading(true);
+
+        // Perform the search
         const results = await searchBible(searchQuery, searchType);
         setResults(results);
 
-        const qaResponse = await analyseScripture(
-          results.map(
+        // Create an array for the results
+        const analysisInput = [
+          `User search query: ${searchQuery}\n Search Results:`,
+          ...results.map(
             (result: { id: string; text: string }) =>
               `${result.id}: ${result.text}`
           ),
+        ];
+
+        // Analyse the search results
+        const qaResponse = await analyseScripture(
+          analysisInput,
           "interactive_qa"
         );
 
+        // Set the QA results
         setQAResults(qaResponse.result);
       } catch (error) {
         console.error("Error searching the Bible:", error);
