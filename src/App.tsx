@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { SearchPage } from "./components/SearchPage";
 import { ApiDocsPage } from "./components/ApiDocsPage";
@@ -10,27 +10,26 @@ import "./App.css";
 export default function App() {
   const [currentPage, setCurrentPage] = useState("search");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // State for mobile menu
+  const isInitialized = useRef(false); // Track whether session initialization has run
 
-  // Check for an existing session or create a new one on app load
   useEffect(() => {
+    if (isInitialized.current) return;
+    isInitialized.current = true;
+
     const initializeSession = async () => {
       try {
-        // Check if a session already exists (e.g., by checking a cookie)
-        const sessionExists = document.cookie.includes("cookie"); // Replace "cookie" with your cookie name
-        if (!sessionExists) {
-          // If no session exists, create a new one
-          await createAnonymousSession();
-          console.log("New anonymous session created.");
-        } else {
-          console.log("Existing session found.");
-        }
+        // Always attempt to create/reuse a session
+        const { access_token } = await createAnonymousSession();
+        // Store the token in localStorage or sessionStorage
+        localStorage.setItem("access_token", access_token);
+        console.log("Session initialized and token stored");
       } catch (error) {
-        console.error("Failed to initialize session:", error);
+        console.error("Session initialization failed:", error);
       }
     };
 
     initializeSession();
-  }, []); // Run only once on component mount
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">

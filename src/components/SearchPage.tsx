@@ -148,26 +148,29 @@ export const SearchPage = () => {
       try {
         setIsSending(true);
         // Append user message
-        setMessages((prevMessages) => prevMessages.concat({
-          role: "user",
-          content: chatQuery,
-        }));
-        
+        setMessages((prevMessages) =>
+          prevMessages.concat({
+            role: "user",
+            content: chatQuery,
+          })
+        );
+
         const chatResponse = await chat(
           results.map((result) => result.text).join("\n\n"),
           chatQuery
         );
 
         // Append system message
-        setMessages((prevMessages) => prevMessages.concat({
-          role: "system",
-          content: chatResponse.response,
-        }));
-        
+        setMessages((prevMessages) =>
+          prevMessages.concat({
+            role: "system",
+            content: chatResponse.response,
+          })
+        );
+
         setChatQuery(""); // Clear chat query after sending
       } catch (error) {
         console.error("Error sending message to scripture expert:", error);
-        setResults([]); // Clear results in case of error
       } finally {
         setIsSending(false);
       }

@@ -26,7 +26,6 @@ export async function searchBible(query: string, type: "verse" | "chapter") {
   return response.json();
 }
 
-
 /**
  * Analyze biblical texts using the specified analysis type.
  *
@@ -55,34 +54,40 @@ export async function analyseScripture(texts: string[], type: string) {
 }
 
 /**
- * Create an anonymous session for the user.
+ * Create an anonymous session for the user and retrieve a JWT token.
  *
- * @returns The session ID from the server.
+ * @returns The JWT token from the server.
  * @throws Error if the HTTP request fails.
  */
 export async function createAnonymousSession() {
-  const response = await fetch(`${serverApi}/api/logos/create-anonymous-session`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include", // Ensure cookies are included in the request
-  });
+  const response = await fetch(
+    `${serverApi}/api/logos/create-anonymous-session`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  return data; // Returns { access_token, token_type, user_id }
 }
 
 export async function chat(context: string, query: string, user_id?: string) {
+  const token = localStorage.getItem("access_token");
+
   const response = await fetch(`${serverApi}/api/logos/chat`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`, // Include the token
     },
-    credentials: "include", // Include cookies in the request
+
     body: JSON.stringify({
       context: context,
       query: query,
