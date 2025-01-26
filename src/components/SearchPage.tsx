@@ -403,6 +403,13 @@ export const SearchPage = () => {
                   </div>
                 </div>
               ))}
+
+              {/* User Warning Note */}
+              {messages.length === 0 && (
+                <div className="text-sm text-gray-500 italic text-center">
+                  ⚠️ Please note: You are conversing with an AI. Responses may not always be accurate or reliable.
+                </div>
+              )}
             </div>
 
             {/* Input and QA Section */}
